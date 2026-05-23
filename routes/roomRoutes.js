@@ -1,13 +1,9 @@
-
 const express = require('express');
-
-
 const router = express.Router();
 
+const roomController = require('../controllers/roomController');
+const { validateCreateRoom } = require('../middleware/validation');
 
-router.get('/hello', (req, res) => {
-    res.json({ message: 'Hello from room routes!' });
-});
-
+router.post('/create', validateCreateRoom, roomController.createRoom);
 
 module.exports = router;

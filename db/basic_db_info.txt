@@ -1,0 +1,18 @@
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    handle VARCHAR UNIQUE NOT NULL
+);
+
+CREATE TABLE rooms (
+    id UUID PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    status VARCHAR DEFAULT 'waiting',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE participants (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    room_id UUID REFERENCES rooms(id),
+    joined_at TIMESTAMP DEFAULT NOW()
+);
