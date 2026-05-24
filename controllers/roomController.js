@@ -1,11 +1,14 @@
 const roomService = require('../services/roomService');
 
 const createRoom = async (req, res) => {
-    const { handle } = req.body;
-
-    const result = await roomService.createRoom(handle);
-
-    res.status(201).json(result);
+    try {
+        const { handle } = req.body;
+        const result = await roomService.createRoom(handle);
+        res.status(201).json(result);
+    } catch (error) {
+        console.error('Error creating room:', error);
+        res.status(400).json({ error: error.message });
+    }
 };
 
 module.exports = {

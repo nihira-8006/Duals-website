@@ -10,9 +10,13 @@ CREATE TABLE rooms (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+
 CREATE TABLE participants (
     id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    room_id UUID REFERENCES rooms(id),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
     joined_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX idx_rooms_code ON rooms(code);
+CREATE INDEX idx_rooms_status ON rooms(status);
