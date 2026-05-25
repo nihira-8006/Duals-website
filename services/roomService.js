@@ -148,7 +148,95 @@ const joinRoom = async (handle, roomCode) => {
     }
 };
 
+const getRoomStatus = async (roomCode) => {
+    try {
+        console.log('🔍 Getting room status for code:', roomCode);
+        
+        // 1. Find room by CODE (not ID)
+        console.log('📍 Step 1: Finding room...');
+        const room = await roomStore.findRoomByCode(roomCode);
+        
+        if (!room) {
+            throw new Error('Room not found');
+        }
+        console.log('   ✅ Room found');
+
+        // 2. Get participants
+        console.log('📍 Step 2: Getting participants...');
+        const participants = await participantStore.getParticipantsByRoomId(room.id);
+        console.log('   ✅ Got', participants.length, 'participants');
+
+        console.log('✅ Successfully retrieved room status');
+
+        return {
+            roomId: room.id,
+            roomCode: room.code,
+            status: room.status,
+            participants: participants.map(p => ({
+                id: p.user_id,
+                handle: p.handle
+            }))
+        };
+
+    } catch (error) {
+        console.error('❌ Error in getRoomStatus:');
+        console.error('   Message:', error.message);
+        throw error;
+    }
+};
+
+
+
+
+// services/roomService.js - ADD THIS METHOD
+
+const leaveRoom = async (roomId, userId) => {
+    try {
+        console.log('🚪 User leaving room:', userId, roomId);
+        
+        // 1. Remove participant
+        console.log('📍 Step 1: Removing participant from room...');
+        await participantStore.deleteParticipant(userId, roomId);
+        console.log('   ✅ Participant removed');
+
+        // 2. Count remaining participants
+        console.log('📍 Step 2: Counting remaining participants...');
+        const count = await participantStore.countParticipants(roomId);
+        console.log('   ✅ Remaining participants:', count);
+
+        let roomDeleted = false;
+
+        // 3. If room empty, delete it
+        if (count === 0) {
+            console.log('📍 Step 3: Room is empty, deleting room...');
+            await roomStore.deleteRoom(roomId);
+            console.log('   ✅ Room deleted');
+            roomDeleted = true;
+        } 
+        // 4. If one person left and room was active, set back to waiting
+        else if (count === 1) {
+            console.log('📍 Step 3: Only one person left, resetting room to WAITING...');
+            await roomStore.updateRoomStatus(roomId, ROOM_STATUS.WAITING);
+            console.log('   ✅ Room status reset to WAITING');
+        }
+
+        console.log('✅ Successfully left room');
+
+        return {
+            message: 'Successfully left room',
+            roomDeleted
+        };
+
+    } catch (error) {
+        console.error('❌ Error in leaveRoom:');
+        console.error('   Message:', error.message);
+        throw error;
+    }
+};
+
 module.exports = {
     createRoom,
-    joinRoom
+    joinRoom,
+    getRoomStatus,
+    leaveRoom
 };

@@ -102,9 +102,30 @@ const countParticipants = async (roomId) => {
     }
 };
 
+
+
+
+const deleteParticipant = async (userId, roomId) => {
+    try {
+        console.log('🗑️ Removing participant from room:', userId, roomId);
+        
+        const result = await pool.query(
+            `DELETE FROM participants WHERE user_id = $1 AND room_id = $2 RETURNING *`,
+            [userId, roomId]
+        );
+
+        console.log('   ✅ Participant removed');
+        return result.rows[0];
+
+    } catch (error) {
+        console.error('Error deleting participant:', error.message);
+        throw error;
+    }
+};
 module.exports = {
     insertParticipant,
     getParticipantsByRoomId,
     isUserInRoom,
-    countParticipants
+    countParticipants,
+    deleteParticipant
 };

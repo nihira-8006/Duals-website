@@ -6,5 +6,6 @@ const { validateCreateRoom, validateJoinRoom } = require('../middleware/validati
 
 router.post('/create', validateCreateRoom, roomController.createRoom);
 router.post('/join', validateJoinRoom, roomController.joinRoom);
-
+router.get('/:roomId/status', roomController.getRoomStatus);
+router.delete('/:roomId/leave', roomController.leaveRoom);
 module.exports = router;
