@@ -82,6 +82,43 @@ const insertRoom = async (room) => {
     }
 };
 
+
+const findRoomByCode = async (roomCode) => {
+    try {
+        console.log('🔍 Finding room by code:', roomCode);
+        
+        const result = await pool.query(
+            `SELECT * FROM rooms WHERE code = $1`,
+            [roomCode]
+        );
+
+        return result.rows[0];
+
+    } catch (error) {
+        console.error('Error finding room by code:', error.message);
+        throw error;
+    }
+};
+
+const updateRoomStatus = async (roomId, status) => {
+    try {
+        console.log('📝 Updating room status:', roomId, '→', status);
+        
+        const result = await pool.query(
+            `UPDATE rooms SET status = $1 WHERE id = $2 RETURNING *`,
+            [status, roomId]
+        );
+
+        return result.rows[0];  // ✅ Already updated, don't fetch again
+
+    } catch (error) {
+        console.error('Error updating room status:', error.message);
+        throw error;
+    }
+};
+
 module.exports = {
-    insertRoom
+    insertRoom,
+    findRoomByCode,
+    updateRoomStatus
 };
