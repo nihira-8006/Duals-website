@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CF Duels - Test Client</title>
+    <title>CF Duels - Socket Tester</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; background: #1a1a1a; color: #fff; }
         .card { background: #2a2a2a; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; }
@@ -12,11 +13,13 @@
         button { background: #4CAF50; color: white; border: none; cursor: pointer; }
         button:hover { background: #45a049; }
         pre { background: #111; padding: 1rem; border-radius: 4px; overflow-x: auto; color: #00ff00; }
+        .alert { background: #ff9800; color: #000; padding: 0.5rem; margin-top: 0.5rem; display: none; font-weight: bold; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <h1>Codeforces Duel - API Tester</h1>
+    <h1>Codeforces Duel - Socket Tester</h1>
+    <div id="socket-alert" class="alert">📡 LIVE UPDATE: Waiting...</div>
 
     <div class="card">
         <h2>1. Create Room (Player 1)</h2>
@@ -33,16 +36,19 @@
         <pre id="join-log">Waiting...</pre>
     </div>
 
-    <div class="card">
-        <h2>3. Fetch Fair Problem</h2>
-        <input type="text" id="target-rating" placeholder="Target Rating (e.g. 1500)">
-        <button onclick="startDuel()">Get Problem</button>
-        <pre id="problem-log">Waiting...</pre>
-    </div>
-
     <script>
-        const API_BASE = 'http://localhost:3000/api'; // CHANGE PORT IF NEEDED
+        const API_BASE = 'http://localhost:3000/api'; 
+        
+        // Connect to the WebSocket server
+        const socket = io('http://localhost:3000');
         let currentRoomId = '';
+
+        // Listen for real-time room updates from the server
+        socket.on('room_update', (data) => {
+            const alertBox = document.getElementById('socket-alert');
+            alertBox.style.display = 'block';
+            alertBox.innerText = `📡 LIVE UPDATE: ${data.message}`;
+        });
 
         async function createRoom() {
             const handle = document.getElementById('p1-handle').value;
@@ -54,8 +60,12 @@
                 });
                 const data = await res.json();
                 currentRoomId = data.roomId; 
-                document.getElementById('join-code').value = data.roomCode; // Auto-fill for convenience
+                document.getElementById('join-code').value = data.roomCode; 
                 document.getElementById('create-log').innerText = JSON.stringify(data, null, 2);
+
+                // Instantly join the socket room after creating it
+                socket.emit('join_room', { roomId: currentRoomId, handle: handle });
+                
             } catch (err) {
                 document.getElementById('create-log').innerText = "Error: " + err.message;
             }
@@ -65,35 +75,21 @@
             const handle = document.getElementById('p2-handle').value;
             const roomCode = document.getElementById('join-code').value;
             try {
+                console.log("Joining room");
                 const res = await fetch(`${API_BASE}/rooms/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ handle, roomCode })
                 });
                 const data = await res.json();
+                currentRoomId = data.roomId;
                 document.getElementById('join-log').innerText = JSON.stringify(data, null, 2);
+
+                // Instantly join the socket room after joining via API
+                socket.emit('join_room', { roomId: currentRoomId, handle: handle });
+
             } catch (err) {
                 document.getElementById('join-log').innerText = "Error: " + err.message;
-            }
-        }
-
-        async function startDuel() {
-            const handle1 = document.getElementById('p1-handle').value;
-            const handle2 = document.getElementById('p2-handle').value;
-            const targetRating = parseInt(document.getElementById('target-rating').value);
-
-            if (!currentRoomId) return alert("Create a room first to get a Room ID!");
-
-            try {
-                const res = await fetch(`${API_BASE}/duels/${currentRoomId}/next`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ handle1, handle2, targetRating })
-                });
-                const data = await res.json();
-                document.getElementById('problem-log').innerText = JSON.stringify(data, null, 2);
-            } catch (err) {
-                document.getElementById('problem-log').innerText = "Error: " + err.message;
             }
         }
     </script>
